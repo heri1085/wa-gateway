@@ -1,3 +1,9 @@
+// Tambahkan polyfill crypto untuk kompatibilitas Baileys di Node.js
+const crypto = require('crypto');
+if (!global.crypto) {
+    global.crypto = crypto;
+}
+
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const qrcode = require('qrcode-terminal');
@@ -35,7 +41,7 @@ async function connectToWhatsApp() {
     const sock = makeWASocket({
         auth: state,
         printQRInTerminal: true,
-        logger: pino({ level: 'silent' }) // Ubah ke 'info' jika ingin melihat log detail Baileys
+        logger: pino({ level: 'silent' })
     });
 
     // Simpan kredensial setiap ada pembaruan sesi
@@ -47,7 +53,7 @@ async function connectToWhatsApp() {
 
         // Jika ada QR Code baru yang dihasilkan
         if (qr) {
-            console.log('Scan QR Code di bawah ini:');
+            console.log('SCAN QR CODE INI DENGAN WHATSAPP ANDA:');
             qrcode.generate(qr, { small: true });
         }
 
