@@ -1,4 +1,10 @@
+// --- FIX: Polyfill Global Crypto untuk Baileys ---
 const crypto = require('crypto');
+if (!globalThis.crypto) {
+    globalThis.crypto = crypto;
+}
+// ------------------------------------------------
+
 const express = require('express');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const qrcode = require('qrcode-terminal');
@@ -11,10 +17,10 @@ let sock;
 let isReady = false;
 let reconnecting = false;
 
-// Helper delay (Poin 5)
+// Helper delay
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
-// --- 11. SISTEM ANTREAN (QUEUE) PENGIRIMAN ---
+// --- SISTEM ANTREAN (QUEUE) PENGIRIMAN ---
 let messageQueue = [];
 let isProcessingQueue = false;
 
@@ -26,7 +32,7 @@ async function processQueue() {
         const { target, message, options, resResolve } = messageQueue.shift();
         try {
             await sock.sendMessage(target, { text: message, ...options });
-            await delay(300); // Jeda lebih bersih (Poin 5)
+            await delay(300);
             resResolve({ success: true });
         } catch (error) {
             console.error(`Gagal kirim ke ${target}:`, error.message);
@@ -43,14 +49,13 @@ function enqueueMessage(target, message, options) {
     });
 }
 
-// --- 9. LOGGING MEMORI ---
+// --- LOGGING MEMORI ---
 setInterval(() => {
     const mem = process.memoryUsage();
     console.log(`RSS ${(mem.rss / 1024 / 1024).toFixed(1)} MB`);
 }, 60000);
 
 async function connectToWhatsApp() {
-    // 1. Mencegah koneksi ganda
     if (reconnecting) return;
     reconnecting = true;
 
@@ -59,7 +64,6 @@ async function connectToWhatsApp() {
 
         sock = makeWASocket({
             auth: state,
-            // 12. Jangan pakai logger silent total (ubah ke level error)
             logger: pino({ level: 'error' }),
             printQRInTerminal: false
         });
@@ -73,18 +77,17 @@ async function connectToWhatsApp() {
             }
 
             if (connection === 'close') {
-                isReady = false; // 2. Set status belum siap
+                isReady = false;
                 const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
                 console.log('Koneksi terputus, mencoba menghubungkan kembali...', shouldReconnect);
                 
                 if (shouldReconnect) {
-                    setTimeout(reconnect, 3000); // 1. Jeda 3 detik untuk reconnect
+                    setTimeout(reconnect, 3000);
                 }
             } else if (connection === 'open') {
-                isReady = true; // 2. Set status benar-benar siap
+                isReady = true;
                 console.log('✅ WhatsApp API (Baileys) Siap Digunakan!');
 
-                // 6. Gunakan setTimeout untuk groupFetch agar socket stabil dulu
                 setTimeout(async () => {
                     try {
                         const chats = await sock.groupFetchAllParticipating();
@@ -103,7 +106,6 @@ async function connectToWhatsApp() {
 
         sock.ev.on('creds.update', saveCreds);
 
-        // Fitur pesan masuk & perintah '!cekid'
         sock.ev.on('messages.upsert', async ({ messages }) => {
             const m = messages[0];
             if (!m.message || m.key.fromMe) return;
@@ -132,15 +134,12 @@ async function reconnect() {
     await connectToWhatsApp();
 }
 
-// Jalankan koneksi awal
 connectToWhatsApp();
 
-// Endpoint untuk UptimeRobot
 app.get('/', (req, res) => {
     res.send('Server WA Gateway (Baileys) Aktif!');
 });
 
-// --- 10. ENDPOINT STATUS ---
 app.get('/status', (req, res) => {
     res.json({
         connected: isReady,
@@ -148,9 +147,7 @@ app.get('/status', (req, res) => {
     });
 });
 
-// Endpoint untuk menerima perintah dari Google Sheets
 app.post('/send', async (req, res) => {
-    // 2. Cek apakah socket benar-benar sudah siap
     if (!isReady || !sock) {
         return res.status(503).json({
             status: "error",
@@ -161,24 +158,19 @@ app.post('/send', async (req, res) => {
     const { target, message } = req.body;
     if (!target || !message) return res.status(400).json({ status: 'error', message: 'Data tidak lengkap' });
 
-    // 7. Validasi target yang lebih aman
     const targetList = (Array.isArray(target) ? target : [target]).filter(Boolean).map(x => String(x).trim());
 
-    // 8. Jangan kirim jika kosong
     if (targetList.length === 0) {
         return res.status(400).json({ status: 'error', message: 'Target kosong' });
     }
 
     try {
         let options = {};
-        
-        // 3. Regex mention yang lebih fleksibel
         const mentionMatches = message.match(/@(\d+)/g); 
         if (mentionMatches) {
             options.mentions = mentionMatches.map(match => match.replace('@', '') + '@s.whatsapp.net');
         }
 
-        // 11. Masukkan ke antrean pengiriman (Queue)
         for (let i = 0; i < targetList.length; i++) {
             await enqueueMessage(targetList[i], message, options);
         }
