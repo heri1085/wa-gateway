@@ -1,8 +1,10 @@
 FROM node:18-bullseye
 
-# Install Google Chrome supaya Puppeteer bisa berjalan
+# Install Dependencies & Google Chrome
 RUN apt-get update && apt-get install -y \
-    google-chrome-stable \
+    curl \
+    gnupg \
+    ca-certificates \
     libnss3 \
     libatk-bridge2.0-0 \
     libx11-xcb1 \
@@ -20,6 +22,15 @@ RUN apt-get update && apt-get install -y \
     fonts-liberation \
     libappindicator3-1 \
     xdg-utils \
+    --no-install-recommends
+
+# Tambahkan repository resmi Google Chrome
+RUn curl -sS https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google-chrome.gpg
+RUN echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+
+# Install google-chrome-stable
+RUN apt-get update && apt-get install -y \
+    google-chrome-stable \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
