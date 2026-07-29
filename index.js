@@ -1,9 +1,7 @@
-// --- FIX: Polyfill Global Crypto untuk Baileys ---
-const crypto = require('crypto');
-if (!globalThis.crypto) {
-    globalThis.crypto = crypto;
-}
-// ------------------------------------------------
+// --- Polyfill Global Crypto (Diperbarui) ---
+const { webcrypto } = require("crypto");
+globalThis.crypto = webcrypto;
+// -------------------------------------------
 
 const express = require('express');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
@@ -64,7 +62,10 @@ async function connectToWhatsApp() {
 
         sock = makeWASocket({
             auth: state,
-            logger: pino({ level: 'error' }),
+            // --- Logger diubah ke debug ---
+            logger: pino({
+                level: "debug"
+            }),
             printQRInTerminal: false
         });
 
@@ -78,6 +79,13 @@ async function connectToWhatsApp() {
 
             if (connection === 'close') {
                 isReady = false;
+                
+                // --- Tambahkan console.dir untuk melihat detail disconnect ---
+                console.log('Detail Disconnect:');
+                console.dir(lastDisconnect, {
+                    depth: null
+                });
+
                 const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
                 console.log('Koneksi terputus, mencoba menghubungkan kembali...', shouldReconnect);
                 
