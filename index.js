@@ -17,10 +17,20 @@ client.on('qr', (qr) => {
     qrcode.generate(qr, { small: true });
 });
 
-client.on('ready', () => {
-    console.log('✅ WhatsApp API Siap Digunakan!');
-});
 
+client.on('ready', async () => {
+    console.log('✅ WhatsApp API Siap Digunakan!');
+
+    // Mengambil daftar semua chat/grup secara otomatis
+    const chats = await client.getChats();
+    console.log('--- DAFTAR GRUP & ID ---');
+    chats.forEach(chat => {
+        if (chat.isGroup) {
+            console.log(`Nama Grup: ${chat.name} | ID: ${chat.id._serialized}`);
+        }
+    });
+    console.log('------------------------');
+});
 // Fitur untuk cek ID Grup
 client.on('message', async msg => {
     if (msg.body === '!cekid') {
