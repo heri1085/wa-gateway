@@ -1,28 +1,26 @@
 FROM node:20-alpine
 
 # Install Dependencies & Google Chrome
-RUN apt-get update && apt-get install -y \
+RUN apk update && apk add --no-cache \
     curl \
     gnupg \
     ca-certificates \
-    libnss3 \
-    libatk-bridge2.0-0 \
-    libx11-xcb1 \
-    libxcb-dri3-0 \
-    libxcomposite1 \
-    libxcursor1 \
-    libxdamage1 \
-    libxext6 \
-    libxfixes3 \
-    libxi6 \
-    libxrandr2 \
-    libxrender1 \
-    libxss1 \
-    libxtst6 \
-    fonts-liberation \
-    libappindicator3-1 \
-    xdg-utils \
-    --no-install-recommends
+    nss \
+    atk \
+    libx11 \
+    libxcb \
+    libxcomposite \
+    libxcursor \
+    libxdamage \
+    libxext \
+    libxfixes \
+    libxi \
+    libxrandr \
+    libxrender \
+    libxss \
+    xtst \
+    ttf-liberation \
+    xdg-utils
 
 # Tambahkan repository resmi Google Chrome
 RUN curl -sS https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google-chrome.gpg
