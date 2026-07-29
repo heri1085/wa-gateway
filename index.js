@@ -8,7 +8,16 @@ app.use(express.json());
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage', // 👈 PENTING: Mencegah crash memory di server Linux/Render
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu'
+        ]
     }
 });
 
@@ -17,20 +26,24 @@ client.on('qr', (qr) => {
     qrcode.generate(qr, { small: true });
 });
 
-
 client.on('ready', async () => {
     console.log('✅ WhatsApp API Siap Digunakan!');
 
     // Mengambil daftar semua chat/grup secara otomatis
-    const chats = await client.getChats();
-    console.log('--- DAFTAR GRUP & ID ---');
-    chats.forEach(chat => {
-        if (chat.isGroup) {
-            console.log(`Nama Grup: ${chat.name} | ID: ${chat.id._serialized}`);
-        }
-    });
-    console.log('------------------------');
+    try {
+        const chats = await client.getChats();
+        console.log('--- DAFTAR GRUP & ID ---');
+        chats.forEach(chat => {
+            if (chat.isGroup) {
+                console.log(`Nama Grup: ${chat.name} | ID: ${chat.id._serialized}`);
+            }
+        });
+        console.log('------------------------');
+    } catch (e) {
+        console.log('Gagal mengambil daftar chat: ' + e.message);
+    }
 });
+
 // Fitur untuk cek ID Grup
 client.on('message', async msg => {
     if (msg.body === '!cekid') {
