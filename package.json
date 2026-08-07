@@ -2,6 +2,8 @@
   "name": "wa-gateway-api",
   "version": "1.0.0",
   "main": "index.js",
+  "author": "Heri Asbowo",
+  "license": "GPL-3.0-only",
   "engines": {
     "node": "20.x"
   },
