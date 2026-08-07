@@ -190,4 +190,4 @@ Sistem ini dibekali fitur respon perintah otomatis:
 
 ## 🛡️ Lisensi
 
-Project ini dirilis di bawah lisensi [MIT](https://www.google.com/search?q=LICENSE). Silakan gunakan dan kembangkan sesuai kebutuhan Anda.
+Project ini dirilis di bawah lisensi [GNU GPLv3](LICENSE) © 2026 **Heri Asbowo**.
